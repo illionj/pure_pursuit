@@ -1,5 +1,6 @@
 #include "pure_pursuit.h"
 
+
 // #include <iostream>
 namespace pursuit {
 
@@ -134,7 +135,7 @@ double PurePursuitControl::calcLookaheadDistance(const double lateral_error,
   }
   // std::cout << "vel_ld=" << vel_ld << '\n';
   // const double total_ld = std::clamp(vel_ld + curvature_ld + lateral_error_ld, min_ld, param.max_lookahead_distance);
-  const double total_ld = std::min(vel_ld + min_ld, param.max_lookahead_distance);
+  const double total_ld = std::min(vel_ld + min_ld+lateral_error_ld, param.max_lookahead_distance);
   return total_ld;
 };
 
@@ -165,18 +166,61 @@ double PurePursuitControl::calcSteeringAngle(Point2D target, double x, double y,
   return std::clamp(steer, -veh_info.max_steer_angle, veh_info.max_steer_angle);
 }
 
+// double PurePursuitControl::applySteeringLag(double delta_filtered,double cmd_delta, double dt) {
+    
+//     constexpr double tau = 0.15;                 // 方向盘到轮胎的一阶惯性常数
+//     delta_filtered = (tau * delta_filtered + dt * cmd_delta) / (tau + dt);
+//     return delta_filtered;
+// }
+
 double PurePursuitControl::applySteeringLag(double delta_filtered,double cmd_delta, double dt) {
     
-    constexpr double tau = 0.15;                 // 方向盘到轮胎的一阶惯性常数
-    delta_filtered = (tau * delta_filtered + dt * cmd_delta) / (tau + dt);
-    return delta_filtered;
+  // 假设每秒只能转0.7rad
+  auto max_steer_angle_dt=0.7*dt;
+  //区分正负
+  auto steer_difference=cmd_delta-delta_filtered;
+  int sign = (steer_difference >= 0) ? 1 : -1;
+  if(std::abs(steer_difference)>max_steer_angle_dt)steer_difference=sign*max_steer_angle_dt;
+
+  auto limited_steer=steer_difference+delta_filtered;
+  return std::clamp(limited_steer, -veh_info.max_steer_angle, veh_info.max_steer_angle);
+}
+
+double PurePursuitControl::calculateLateralError(double rear_x, double rear_y,double yaw)
+{
+  double lateral_error=0.0;
+  const size_t i_near = find_min_distance_point(path, rear_x, rear_y);
+  const auto [path_x, path_y] = path[i_near];
+
+  const std::size_t idx1 =
+      (i_near + 1 < path.size())        ? i_near + 1     // 常规：用后一点
+    : (i_near == 0 ? i_near             // 特殊：轨迹长度只有 1
+                   : i_near - 1);       // 尾点：用前一点
+
+  const auto [path_x2, path_y2] = path[idx1];
+  const double ex = path_x2 - path_x;  
+  const double ey = path_y2 - path_y;
+
+  const double rx = rear_x - path_x;    
+  const double ry = rear_y - path_y;
+
+  const double cross_er = ex * ry - ey * rx;   
+  const double denom    = std::hypot(ex, ey);   
+  if (denom > 1e-6)                             
+      lateral_error = cross_er / denom;
+  else
+      lateral_error = 0.0;
+
+  return lateral_error;
 }
 
 ControlMsg PurePursuitControl::run() {
   ControlMsg msg;
   auto cum_dist = getRoadCumDist();
   auto min_ld = isReverseMotion() ? param.reverse_min_lookahead_distance : param.min_lookahead_distance;
-  auto total_ld = calcLookaheadDistance(0, 0, veh_state.velocity, min_ld);
+
+  auto lateral_error=calculateLateralError(veh_state.rear_x,veh_state.rear_y,veh_state.yaw);
+  auto total_ld = calcLookaheadDistance(lateral_error, 0, veh_state.velocity, min_ld);
   //// 如果倒车入参点顺序相同则使用此代码
   // auto target = isReverseMotion() ? findTargetPointReverse(cum_dist, veh_state.rear_x, veh_state.rear_y, total_ld)
   //                                 : findTargetPoint(cum_dist, veh_state.rear_x, veh_state.rear_y, total_ld);
@@ -193,8 +237,8 @@ void PurePursuitControl::updateVehicleState(const ControlMsg &msg, double dt) {
 
   auto cos_yaw = std::cos(veh_state.yaw);
   auto sin_yaw = std::sin(veh_state.yaw);
-  veh_state.steering_angle=applySteeringLag(veh_state.steering_angle,msg.steering_tire_angle,dt);
-
+  // veh_state.steering_angle=applySteeringLag(veh_state.steering_angle,msg.steering_tire_angle,dt);
+  veh_state.steering_angle=msg.steering_tire_angle;
   /**
    * @brief
    注意这里的顺序,根据运动学模型假设,车辆的几何中心会沿着当前航向角前进

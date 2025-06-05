@@ -3,6 +3,7 @@
 // #include <iostream>
 // #include <limits>
 #include <vector>
+#include <tuple>
 
 namespace pursuit {
 
@@ -42,7 +43,7 @@ struct PurePursuitParams {
   double min_lookahead_distance = 3.35;
 
   /// 最大预瞄距离（米），防止高速下预瞄距离过大导致跟踪精度下降
-  double max_lookahead_distance = 10.0;
+  double max_lookahead_distance = 12.0;
 
   /// 转向收敛阈值（弧度），当目标转向角与当前方向盘角差值小于该值时，认为转向已收敛
   double converged_steer_rad = 0.1;
@@ -164,6 +165,7 @@ class PurePursuitControl {
 
   double applySteeringLag(double delta_filtered,double cmd_delta, double dt);
 
+  double calculateLateralError(double rear_x, double rear_y,double yaw);
  public:
   // debug用的 以后删
   size_t last_index = 0;
