@@ -1,3 +1,7 @@
+# README.md
+- zh_CN [简体中文](/readme/README_ZH.md)
+- en [English](README.md)
+
 # 0.介绍
 pure_pursuit 纯追踪算法属于简单的路径追踪算法,它的优点在于原理简单,计算量低,对路径质量要求不高.
 
@@ -18,12 +22,6 @@ pure_pursuit 纯追踪算法属于简单的路径追踪算法,它的优点在于
 + 角速度平滑,寻找目标点时会进行简单插值
 + 快速计算
 + 大量参数自由配置
-
-
-
-# README.md
-- zh_CN [简体中文](/readme/README_ZH.md)
-- en [English](README.md)
 
 
 # 1.使用

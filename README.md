@@ -1,4 +1,8 @@
 
+# README.md
+- zh_CN [简体中文](/readme/README_ZH.md)
+- en [English](README.md)
+
 # 0. Introduction
 The pure pursuit algorithm is a simple path tracking algorithm. Its advantage lies in its simplicity and low computational cost, with no high requirements for path quality. 
 
@@ -21,9 +25,7 @@ This principle provides an adjustment mechanism similar to a PID controller for 
 + Fast computation
 + A large number of configurable parameters
 
-# README.md
-- zh_CN [简体中文](/readme/README_ZH.md)
-- en [English](README.md)
+
 
 # 1. Usage
 ## 1.1 From Source
