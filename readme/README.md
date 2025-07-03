@@ -1,48 +1,46 @@
 # README.md
-- zh_CN [简体中文](/readme/README_ZH.md)
-- en [English](README.md)
+- zh_CN [简体中文](/readme/README.md)
+- en [English](README_EN.md)
 
-# 0. Introduction
-The pure pursuit algorithm is a simple path tracking algorithm. Its advantage lies in its simplicity and low computational cost, with no high requirements for path quality. 
+# 0.介绍
+pure_pursuit 纯追踪算法属于简单的路径追踪算法,它的优点在于原理简单,计算量低,对路径质量要求不高.
 
-However, it has many drawbacks, especially in high-speed or curve scenarios, where its performance is not ideal.
+同样,它的缺点也很多,比如在高速场景或者弯道场景下表现效果不佳.
 
-Common implementations, such as Autoware, often focus on adjusting the lookahead distance. On straight paths, the lookahead distance should be large; if it is too small, it causes the vehicle's front end to jitter. In curves, the lookahead distance should be small; if it is too large, it results in insufficient steering force.
+参考常见实现方案,比如autoware等,它们的着眼点往往在于视距调整,在直道上视距应该大,过小会导致车头抖动.而在弯道上,视距应该小,过大会导致转弯力度不足.
 
-We found that by introducing a gain factor after computing the steering angle of the front wheels, the algorithm’s performance could be significantly improved:
+而我发现,在完成计算前轮转角计算后,为其增加一个增益系数,可以显著提升其效果:
 ```c++
   double steer = std::atan(curvature * veh_info.wheel_base);
-  // steering_angle_ratio is crucial
-  steer = adjustAngle(steer * steering_angle_ratio);
+  //streeing_angle_ratio is crucial
+  steer = adjustAngle(steer * streeing_angle_ratio);
 ```
+它的原理就是为pure_pursuit提供类似PID的调整手段,当施加增益后可以快速调整车辆姿态,调整完成后会让下一帧的真实前轮转角迅速变小.一个小的数值进行增益数值也不大.当车辆行驶在直道/曲率较小的路段中,其前轮转角接近于0,进行增益调整也不影响其表现.
 
-This principle provides an adjustment mechanism similar to a PID controller for pure pursuit, enabling quick vehicle attitude adjustments. Once the adjustment is made, the next frame's actual front wheel angle will decrease rapidly. The gain value used here is small. When the vehicle is on a straight path or a path with small curvature, where the front wheel angle is close to zero, applying the gain adjustment does not affect its performance.
-
-+ Excellent and realistic performance
-+ Supports reverse driving (input speed < 0)
-+ Smooth angular velocity, simple interpolation while searching for target points
-+ Fast computation
-+ A large number of configurable parameters
-
++ 极佳且真实的表现效果
++ 支持倒车(输入速度<0)
++ 角速度平滑,寻找目标点时会进行简单插值
++ 快速计算
++ 大量参数自由配置
 
 
-# 1. Usage
-## 1.1 From Source
+# 1.使用
+## 1.1 源码方式
 ```CMakeLists.txt
-# Assuming the project is in the third_party folder, add the following to the current project's CMakeLists.txt
+# 假设项目位于third_party文件夹下,在当前项目CMakeLists.txt中添加以下内容
 add_subdirectory("third_party/pure_pursuit" EXCLUDE_FROM_ALL)
 add_executable(demo "demo.cc")
 target_link_libraries(demo PRIVATE pure_pursuit)
 ```
 
-## 1.2 Installation
+## 1.2 安装方式
 ```bash
 cd pure_pursuit
-# The default installation path is ./build/install. The path can be set with CMAKE_INSTALL_PREFIX
+#默认安装路径为 ./build/install,路径使用CMAKE_INSTALL_PREFIX进行设置
 cmake -B build
 cmake --build build --target install
 ```
-The `./build/install` directory will look like this:
+./build/install文件如下:
 ```bash
 $ tree
 .
@@ -58,38 +56,39 @@ $ tree
     └── libpure_pursuit.a
 
 4 directories, 6 files
+
+```
+完成编译安装后,在当前项目CMakeLists.txt中添加以下内容
 ```
 
-After installation, add the following to your project's CMakeLists.txt:
-```cmake
 find_package(pure_pursuit 0.1 REQUIRED
-             PATHS "${CMAKE_SOURCE_DIR}/third_party/puresuitlib/build/install"  # Local install directory
-             NO_DEFAULT_PATH)        # Optional: Only search here, skip system paths
+             PATHS "${CMAKE_SOURCE_DIR}/third_party/puresuitlib/build/install"  # 本地安装目录
+             NO_DEFAULT_PATH)        # 可选：只查这里，跳过系统路径
 add_executable(demo demo.cc)
 target_link_libraries(demo PRIVATE pure_pursuit::pure_pursuit)
 ```
 
-# 2. Local Testing
+# 2.本地测试
 ```bash
 cd pure_pursuit
 ./build_and_test.sh
 ```
 
-# 3. Test Results
+# 3.测试结果
 ```bash
-Number of iterations: 185
+计算轮次: 185 次
 millis: 6 ms
 micros: 6192 μs
-nanos: 6192948 ns
+nanos : 6192948 ns
 float ms: 6.192948 ms
 ```
 
-<!-- To display multiple images side by side, you can use tables like this -->
-| Path Information        | Heading Angle        
-| --------------------- | ------------------ 
+<!-- 如果想并排展示多张图，可以用表格这样排版 -->
+| 路径信息          | 航向角            
+| -------------- | -------------- 
 | ![Path](/scripts/path.png) | ![Yaw](/scripts/yaw.png) 
 
-| Angular Velocity        | Angular Acceleration        
-| --------------------- | -------------------- 
+| 角速度            | 角加速度            
+| -------------- | -------------- 
 | ![Path](/scripts/yaw_rate.png) | ![Yaw](/scripts/yaw_accel.png) 
 
