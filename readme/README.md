@@ -71,12 +71,8 @@ target_link_libraries(demo PRIVATE pure_pursuit::pure_pursuit)
 
 # 2. Local Testing
 ```bash
-# The top-level build will automatically generate a test demo
 cd pure_pursuit
-cmake -B build
-cmake --build build
-# Run the test demo and visualization script
-./build/bin/demo && python scripts/plot.py
+./build_and_test.sh
 ```
 
 # 3. Test Results

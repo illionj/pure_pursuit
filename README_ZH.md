@@ -70,11 +70,8 @@ target_link_libraries(demo PRIVATE pure_pursuit::pure_pursuit)
 
 # 2.本地测试
 ```bash
-# 顶层编译会自动生成测试demo
 cd pure_pursuit
-cmake -B build -DCMAKE_BUILD_TYPE=Release
-# 编译执行测试demo和可视化脚本
-cmake --build build && ./build/bin/demo && python3 scripts/plot.py 
+./build_and_test.sh
 ```
 
 # 3.测试结果

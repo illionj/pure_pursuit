@@ -1,0 +1,4 @@
+[submodule "third_party/cubic_spline"]
+	path = third_party/cubic_spline
+	url = https://github.com/illionj/CubicSpline.git
+	branch = main

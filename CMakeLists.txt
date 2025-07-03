@@ -5,6 +5,8 @@ if(NOT CMAKE_BUILD_TYPE)
       "Choose the type of build: None, Debug, Release, RelWithDebInfo, MinSizeRel" FORCE)
 endif()
 
+
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -32,6 +34,7 @@ add_subdirectory(src)
 
 option(PURSUIT_BUILD_DEMO "Build the pursuit demo application" ON)
 if(PURSUIT_BUILD_DEMO AND CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+  add_subdirectory("third_party/cubic_spline" EXCLUDE_FROM_ALL) 
   add_subdirectory(example)
 endif()
 

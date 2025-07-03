@@ -1,9 +1,6 @@
-#include <algorithm>
+
 #include <cmath>
-// #include <iostream>
-// #include <limits>
 #include <vector>
-#include <tuple>
 
 namespace pursuit {
 
@@ -11,7 +8,7 @@ inline constexpr double ONE_PI = 3.14159265358979323846;
 inline constexpr auto TWO_PI = ONE_PI * 2;
 
 // using PathType = std::vector<std::tuple<double, double, double>>;
-using Point2D = std::tuple<double, double>;
+using Point2D = std::pair<double, double>;
 using PathType = std::vector<Point2D>;
 using PathSumType = std::vector<double>;
 
@@ -43,7 +40,7 @@ struct PurePursuitParams {
   double min_lookahead_distance = 3.35;
 
   /// 最大预瞄距离（米），防止高速下预瞄距离过大导致跟踪精度下降
-  double max_lookahead_distance = 12.0;
+  double max_lookahead_distance = 10.0;
 
   /// 转向收敛阈值（弧度），当目标转向角与当前方向盘角差值小于该值时，认为转向已收敛
   double converged_steer_rad = 0.1;
@@ -106,10 +103,11 @@ struct ControlMsg {
   /// 时间戳 暂时不用
 
   /// 期望的转向轮转角（弧度）
-  double steering_tire_angle = 0.0f;
+  double steering_tire_angle = 0.0;
 
   /// 转向轮角速度（弧度/秒），即转角变化率
-  double steering_tire_rotation_rate = 0.0f;
+  double steering_tire_rotation_rate = 0.0;
+  double lateral_acceleration = 0.0;
 };
 
 /// 车辆状态信息，包括位置、姿态、速度和后轴中心位置
@@ -163,9 +161,10 @@ class PurePursuitControl {
 
   double calcSteeringAngle(Point2D target, double x, double y, double ld);
 
-  double applySteeringLag(double delta_filtered,double cmd_delta, double dt);
+  double applySteeringLag(double delta_filtered, double cmd_delta, double dt);
 
-  double calculateLateralError(double rear_x, double rear_y,double yaw);
+  double calculateLateralError(double rear_x, double rear_y, double yaw);
+
  public:
   // debug用的 以后删
   size_t last_index = 0;
@@ -192,7 +191,13 @@ class PurePursuitControl {
 
   VehicleState &getVehcleState() { return veh_state; }
 
+  // 注意区分,只有调用过setPath才可以使用不带参数的版本
+  double getCurrentLD();
   ControlMsg run();
+
+  // 专供fastRun使用
+  double getCurrentLD(double lateral_error);
+  ControlMsg fastRun(Point2D target, double total_ld);
 
   void updateVehicleState(const ControlMsg &msg, double dt);
 };
