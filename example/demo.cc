@@ -193,14 +193,19 @@ int main() {
       // std::cout<<info<<'\n';
 
       // auto close = cc2->continuousClosest(x1, y1);
+      auto smax=cc2->getSmax();
       auto close = cc2->continuousClosest(p_state.x,p_state.y);
       double ld = ppc.getCurrentLD(std::abs(close.lat_err));
-      std::cout << "close.lat_err=" << close.lat_err << "  close.s=" << close.s << " ld=" << ld << '\n';
       // exit(0);
+      if (std::abs(smax - close.s) < 1e-4) break;
       pursuit::Point2D target{0, 0};
       cc2->findTargetPoint(close, ld, target.first, target.second);
-      std::cout << "target.first=" << target.first << "  target.second=" << target.second << '\n';
-      msg = ppc.fastRun(target, ld);
+
+      // std::cout << "target.first=" << target.first << "  target.second=" << target.second << '\n';
+      // std::cout <<"smax1="<< smax <<"  close.lat_err=" << close.lat_err << "  close.s=" << close.s << " ld=" << ld << '\n';
+      msg = ppc.fastRun(target,ld);
+
+      
     } else {
       // 如果希望每帧插值则在循环中调用
       ppc.setPath(_pathPlanningPointList);
@@ -209,6 +214,7 @@ int main() {
 
     // 使用控制信号和dt更新状态
     ppc.updateVehicleState(msg, dt);
+
     // 更新完毕后获取状态引用
     // p_state.velocity=velocity- p_state.steering_angle/veh_info.max_steer_angle*2;
     count++;
@@ -216,9 +222,9 @@ int main() {
     // 直接调用setVelocity去设置速度
     // 路径改变调用ppc.setPath(_pathPlanningPointList); 去设置路径
 
-    // std::cout << p_state << '\n';
+    // std::cout << p_state << "\n\n";
     log_file << p_state << '\n';
-    if (count >= 200) break;
+    if (count >= 500) break;
     // if (ppc.last_index >= path_len - 1 || ppc.last_index <= 1) break;
   }
   auto end = std::chrono::high_resolution_clock::now();
